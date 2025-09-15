@@ -1,0 +1,14 @@
+._*
+.DS_Store
+**/.DS_Store
+**/._*
+.metadata
+.settings
+.project
+.classpath
+target/
+*.log
+*.tmp
+*.temp
+*~
+*.bak

@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+
+  # Serviço do Postgres
+  postgres:
+    image: postgres:16
+    container_name: postgres-autenticacaoapi
+    environment:
+      POSTGRES_DB: db_autenticacao
+      POSTGRES_USER: user_coti
+      POSTGRES_PASSWORD: user_pass
+    ports:
+      - "5434:5432"
+    networks:
+      - autenticacaoapi-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_coti -d db_autenticacao"]
+      interval: 5s
+      retries: 5
+      timeout: 5s
+
+  # Serviço da API
+  autenticacao_api:
+    container_name: springboot-autenticacaoapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - autenticacaoapi-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/db_autenticacao
+      SPRING_DATASOURCE_USERNAME: user_coti
+      SPRING_DATASOURCE_PASSWORD: user_pass
+
+  # Serviço para rodar os testes
+  test_autenticacao_api:
+    container_name: springboot-autenticacaoapi-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - autenticacaoapi-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/db_autenticacao
+      SPRING_DATASOURCE_USERNAME: user_coti
+      SPRING_DATASOURCE_PASSWORD: user_pass
+    command: mvn test
+    stdin_open: true
+    tty: true
+
+networks:
+  autenticacaoapi-network:
+
+volumes:
+  postgres_data:
